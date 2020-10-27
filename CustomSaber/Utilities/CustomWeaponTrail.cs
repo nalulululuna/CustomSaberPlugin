@@ -125,16 +125,22 @@ namespace CustomSaber.Utilities
             // nop
         }
 
-        private float _frameTime = 0;
-        private int _frameTimeCount = 0;
+        private float _prevTrailTime;
+
         public override void LateUpdate()
         {
-            if (_framesPassed <= 20)
+            // wait until the fps is stable
+            const int passThroughFrames = 20;
+
+            if (_framesPassed <= passThroughFrames)
             {
-                if (_framesPassed == 20)
+                if (_framesPassed == passThroughFrames)
                 {
-                    // fix it when higher framerate hmd is released
-                    _samplingFrequency = System.Math.Min(Mathf.FloorToInt(1f / (_frameTime / _frameTimeCount)), 144);
+                    _samplingFrequency = Mathf.RoundToInt(VRDeviceInfo.Instance.refreshRate);
+                    if (VRDeviceInfo.Instance.isPimax)
+                    {
+                        _samplingFrequency = _samplingFrequency / 2;
+                    }
                     Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}");
 
                     _sampleStep = 1f / (float)_samplingFrequency;
@@ -147,13 +153,6 @@ namespace CustomSaber.Utilities
 		            _inited = true;
                 }
                 _framesPassed++;
-
-                // until the fps is stable.
-                if (_framesPassed > 10)
-                {
-                    _frameTime += Time.deltaTime;
-                    _frameTimeCount++;
-                }
 
                 return;
             }
@@ -170,10 +169,46 @@ namespace CustomSaber.Utilities
                 }
             }
 
-            _trailElementCollection.MoveTailToHead();
-            _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, TimeHelper.time);
+            if (_prevTrailTime == 0)
+            {
+                _prevTrailTime = TimeHelper.time;
+            }
+            int num = Mathf.RoundToInt((TimeHelper.time - _prevTrailTime) / _sampleStep);
+            for (int i = 0; i < num; i++)
+            {
+                _prevTrailTime = TimeHelper.time;
+                _trailElementCollection.MoveTailToHead();
+                _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, _prevTrailTime);
+            }
             _trailElementCollection.UpdateDistances();
             _trailRenderer.UpdateMesh(_trailElementCollection, color);
+        }
+    }
+
+    public sealed class VRDeviceInfo
+    {
+        public bool isPimax { get; private set; }
+        public float refreshRate { get; private set; }
+
+        private static VRDeviceInfo instance = new VRDeviceInfo();
+
+        public static VRDeviceInfo Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
+
+        private VRDeviceInfo()
+        {
+            Logger.log?.Info($"XRDevice.model: {XRDevice.model}");
+            Logger.log?.Info($"XRSettings.loadedDeviceName: {XRSettings.loadedDeviceName}");
+
+            refreshRate = XRDevice.refreshRate;
+            Logger.log?.Info($"refreshRate: {refreshRate}");
+
+            isPimax = XRDevice.model.ToLower().Contains("pimax");
         }
     }
 }
