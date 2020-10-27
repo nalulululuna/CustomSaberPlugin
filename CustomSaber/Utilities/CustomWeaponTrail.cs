@@ -14,23 +14,6 @@ namespace CustomSaber.Utilities
         None
     }
 
-    public sealed class ClassNullLogger
-    {
-        private static ClassNullLogger instance = new ClassNullLogger();
-
-        public static ClassNullLogger Instance
-        {
-            get
-            {
-                return instance;
-            }
-        }
-
-        private ClassNullLogger()
-        {
-        }
-    }
-
     internal class CustomWeaponTrail : SaberTrail
     {
         public ColorType _saberType;
@@ -144,15 +127,16 @@ namespace CustomSaber.Utilities
 
         private float _frameTime = 0;
         private int _frameTimeCount = 0;
-
         public override void LateUpdate()
         {
             if (_framesPassed <= 20)
             {
                 if (_framesPassed == 20)
                 {
+                    // fix it when higher framerate hmd is released
                     _samplingFrequency = System.Math.Min(Mathf.FloorToInt(1f / (_frameTime / _frameTimeCount)), 144);
                     Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}");
+
                     _sampleStep = 1f / (float)_samplingFrequency;
                     int capacity = Mathf.CeilToInt((float)_samplingFrequency * _trailDuration);
 		            _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, TimeHelper.time);
@@ -164,6 +148,7 @@ namespace CustomSaber.Utilities
                 }
                 _framesPassed++;
 
+                // until the fps is stable.
                 if (_framesPassed > 10)
                 {
                     _frameTime += Time.deltaTime;
