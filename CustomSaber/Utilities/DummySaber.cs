@@ -33,8 +33,8 @@ namespace CustomSaber.Utilities
             {
                 SaberScript.ApplyColorsToSaber(this.gameObject, color);
             }
-            var trails = gameObject.GetComponentsInChildren<Xft.XWeaponTrail>();
-            foreach (var trail in trails) trail.color = color;
+            var trails = gameObject.GetComponentsInChildren<SaberTrail>();
+            foreach (var trail in trails) trail.SetField<SaberTrail, Color>("_color", color);
 
             transform.localScale = new Vector3 (Configuration.SaberWidthAdjust, Configuration.SaberWidthAdjust, 1);
         }

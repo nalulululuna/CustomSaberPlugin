@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Xft;
 
 namespace CustomSaber.Utilities
 {
@@ -18,7 +17,7 @@ namespace CustomSaber.Utilities
         private GameObject leftSaber;
         private GameObject rightSaber;
 
-        private int lastNoteId;
+        private float lastNoteTime;
         private bool playerHeadWasInObstacle;
         private ColorManager colorManager;
 
@@ -33,6 +32,7 @@ namespace CustomSaber.Utilities
         private GameEnergyCounter gameEnergyCounter;
         private BeatmapObjectCallbackController beatmapCallback;
         private PlayerHeadAndObstacleInteraction playerHeadAndObstacleInteraction;
+        private PauseController pauseController;
 
         public static SaberScript instance;
 
@@ -71,7 +71,6 @@ namespace CustomSaber.Utilities
 
         private void Start()
         {
-            lastNoteId = -1;
             Restart();
         }
 
@@ -100,18 +99,7 @@ namespace CustomSaber.Utilities
 
             try
             {
-                beatmapObjectManager = Resources.FindObjectsOfTypeAll<BeatmapObjectManager>().FirstOrDefault();
-                if (beatmapObjectManager)
-                {
-                    beatmapObjectManager.noteWasCutEvent += SliceCallBack;
-                    beatmapObjectManager.noteWasMissedEvent += NoteMissCallBack;
-                }
-                else
-                {
-                    Logger.log.Warn($"Failed to locate a suitable '{nameof(BeatmapObjectManager)}'.");
-                }
-
-                scoreController = Resources.FindObjectsOfTypeAll<ScoreController>().FirstOrDefault();
+                scoreController = FindObjectsOfType<ScoreController>().FirstOrDefault();
                 if (scoreController)
                 {
                     scoreController.multiplierDidChangeEvent += MultiplierCallBack;
@@ -120,6 +108,17 @@ namespace CustomSaber.Utilities
                 else
                 {
                     Logger.log.Warn($"Failed to locate a suitable '{nameof(ScoreController)}'.");
+                }
+
+                beatmapObjectManager = scoreController.GetField<BeatmapObjectManager, ScoreController>("_beatmapObjectManager");
+                if (beatmapObjectManager != null)
+                {
+                    beatmapObjectManager.noteWasCutEvent += SliceCallBack;
+                    beatmapObjectManager.noteWasMissedEvent += NoteMissCallBack;
+                }
+                else
+                {
+                    Logger.log.Warn($"Failed to locate a suitable '{nameof(BeatmapObjectManager)}'.");
                 }
 
                 saberCollisionManager = Resources.FindObjectsOfTypeAll<ObstacleSaberSparkleEffectManager>().FirstOrDefault();
@@ -153,10 +152,15 @@ namespace CustomSaber.Utilities
                     Logger.log.Warn($"Failed to locate a suitable '{nameof(BeatmapObjectCallbackController)}'.");
                 }
 
-                playerHeadAndObstacleInteraction = Resources.FindObjectsOfTypeAll<PlayerHeadAndObstacleInteraction>().FirstOrDefault();
-                if (!playerHeadAndObstacleInteraction)
+                playerHeadAndObstacleInteraction = scoreController.GetField<PlayerHeadAndObstacleInteraction, ScoreController>("_playerHeadAndObstacleInteraction");
+                if (playerHeadAndObstacleInteraction == null)
                 {
                     Logger.log.Warn($"Failed to locate a suitable '{nameof(PlayerHeadAndObstacleInteraction)}'.");
+                }
+
+                pauseController = FindObjectsOfType<PauseController>().FirstOrDefault();
+                {
+                    pauseController.didResumeEvent += OnPauseResume;
                 }
             }
             catch (Exception ex)
@@ -171,26 +175,25 @@ namespace CustomSaber.Utilities
                 LevelData levelData = BS_Utils.Plugin.LevelData;
                 BeatmapData beatmapData = levelData.GameplayCoreSceneSetupData.difficultyBeatmap.beatmapData;
 
-                IEnumerable<BeatmapLineData> beatmapLinesData = beatmapData.beatmapLinesData;
+                IReadOnlyList<IReadonlyBeatmapLineData> beatmapLinesData = beatmapData.beatmapLinesData;
                 foreach (BeatmapLineData beatMapLineData in beatmapLinesData)
                 {
-                    IList<BeatmapObjectData> beatmapObjectsData = beatMapLineData.beatmapObjectsData;
+                    IReadOnlyList<BeatmapObjectData> beatmapObjectsData = beatMapLineData.beatmapObjectsData;
                     for (int i = beatmapObjectsData.Count - 1; i >= 0; i--)
                     {
                         BeatmapObjectData beatmapObjectData = beatmapObjectsData[i];
                         if (beatmapObjectData.beatmapObjectType == BeatmapObjectType.Note
-                            && ((NoteData)beatmapObjectData).noteType != NoteType.Bomb)
+                            && ((NoteData)beatmapObjectData).colorType != global::ColorType.None)
                         {
                             if (beatmapObjectData.time > LastTime)
                             {
-                                lastNoteId = beatmapObjectData.id;
                                 LastTime = beatmapObjectData.time;
                             }
-
-                            break;
                         }
                     }
                 }
+
+                lastNoteTime = LastTime;
             }
             catch (Exception ex)
             {
@@ -199,9 +202,17 @@ namespace CustomSaber.Utilities
             }
         }
 
+        public void OnPauseResume()
+        {
+            foreach (var saberTrailRenderer in Resources.FindObjectsOfTypeAll<SaberTrailRenderer>())
+            {
+                saberTrailRenderer.enabled = true;
+            }
+        }
+
         private void OnDestroy()
         {
-            if (beatmapObjectManager)
+            if (beatmapObjectManager != null)
             {
                 beatmapObjectManager.noteWasCutEvent -= SliceCallBack;
                 beatmapObjectManager.noteWasMissedEvent -= NoteMissCallBack;
@@ -274,7 +285,7 @@ namespace CustomSaber.Utilities
                 HideVanillaTrails();
             }
 
-            IEnumerable<Saber> defaultSabers = Resources.FindObjectsOfTypeAll<Saber>();
+            IEnumerable<Saber> defaultSabers = FindObjectsOfType<Saber>();
             foreach (Saber defaultSaber in defaultSabers)
             {
                 Logger.log.Debug($"Hiding default '{defaultSaber.saberType}'");
@@ -297,6 +308,8 @@ namespace CustomSaber.Utilities
 
                     if (Configuration.TrailType == TrailType.Custom)
                     {
+                        HideVanillaTrails();
+
                         IEnumerable<CustomTrail> customTrails = saber.GetComponents<CustomTrail>();
 
                         if (customTrails.Count() == 0 && Configuration.OverrideTrailLength)
@@ -324,14 +337,14 @@ namespace CustomSaber.Utilities
 
         void SetDefaultTrailLength(Saber saber)
         {
-            var trail = saber.GetComponentInChildren<XWeaponTrail>();
+            var trail = saber.GetComponentInChildren<SaberTrail>();
             int length = (int)(Configuration.TrailLength * 30);
             if (length < 2)
             {
                 HideVanillaTrails();
                 return;
             }
-            ReflectionUtil.SetField(trail, "_maxFrame", length);
+            trail.SetField("_trailDuration", length / 75f);
         }
 
         void ApplyScaleToSabers()
@@ -429,13 +442,39 @@ namespace CustomSaber.Utilities
 
         private void HideVanillaTrails() => SetVanillaTrailVisibility(0f);
         private void ResetVanillaTrails() => SetVanillaTrailVisibility(1.007f);
+
+        private IEnumerator SetVanillaTrailVisibilityCoroutine(float trailWidth)
+        {
+            void SetVanillaTrailVisibilityCoroutineInner()
+            {
+                foreach (SaberTrail trail in Resources.FindObjectsOfTypeAll<SaberTrail>())
+                {
+                    if (!(trail is CustomWeaponTrail))
+                    {
+                        SaberTrailRenderer trailRenderer = trail.GetField<SaberTrailRenderer, SaberTrail>("_trailRenderer");
+                        if (trailRenderer != null)
+                        {
+                            trailRenderer.SetTrailWidth(trailWidth);
+                        }
+                    }
+                }
+            }
+
+            // wait 5 frames for default trailwidth is set
+            for (int i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+            SetVanillaTrailVisibilityCoroutineInner();
+
+            // just in case
+            yield return new WaitForSecondsRealtime(0.1f);
+            SetVanillaTrailVisibilityCoroutineInner();
+        }
+
         private void SetVanillaTrailVisibility(float trailWidth)
         {
-            IEnumerable<XWeaponTrail> trails = Resources.FindObjectsOfTypeAll<XWeaponTrail>();
-            foreach (XWeaponTrail trail in trails)
-            {
-                ReflectionUtil.SetField(trail, "_trailWidth", trailWidth);
-            }
+            StartCoroutine(SetVanillaTrailVisibilityCoroutine(trailWidth));
         }
 
         private GameObject GetCustomSaberByType(SaberType saberType)
@@ -470,7 +509,7 @@ namespace CustomSaber.Utilities
 
         #region Events
 
-        private void SliceCallBack(INoteController noteController, NoteCutInfo noteCutInfo)
+        private void SliceCallBack(NoteController noteController, NoteCutInfo noteCutInfo)
         {
             if (!noteCutInfo.allIsOK)
             {
@@ -483,26 +522,27 @@ namespace CustomSaber.Utilities
                 EventManager eventManager = GetEventManagerByType(noteCutInfo.saberType);
                 eventManager?.OnSlice?.Invoke();
                 noteCutInfo.swingRatingCounter.didFinishEvent += OnSwingRatingCounterFinished;
-
             }
 
-            if (noteController.noteData.id == lastNoteId)
+            if (Mathf.Approximately(noteController.noteData.time, lastNoteTime))
             {
+                lastNoteTime = 0;
                 leftEventManager?.OnLevelEnded?.Invoke();
                 rightEventManager?.OnLevelEnded?.Invoke();
             }
         }
 
-        private void NoteMissCallBack(INoteController noteController)
+        private void NoteMissCallBack(NoteController noteController)
         {
-            if (noteController.noteData.noteType != NoteType.Bomb)
+            if (noteController.noteData.colorType != global::ColorType.None)
             {
                 leftEventManager?.OnComboBreak?.Invoke();
                 rightEventManager?.OnComboBreak?.Invoke();
             }
 
-            if (noteController.noteData.id == lastNoteId)
+            if (Mathf.Approximately(noteController.noteData.time, lastNoteTime))
             {
+                lastNoteTime = 0;
                 leftEventManager?.OnLevelEnded?.Invoke();
                 rightEventManager?.OnLevelEnded?.Invoke();
             }
@@ -574,7 +614,7 @@ namespace CustomSaber.Utilities
             rightEventManager?.OnAccuracyChanged?.Invoke(accuracy);
         }
 
-        private void OnSwingRatingCounterFinished(SaberSwingRatingCounter afterCutRating)
+        private void OnSwingRatingCounterFinished(ISaberSwingRatingCounter afterCutRating)
         {
             afterCutRating.didFinishEvent -= OnSwingRatingCounterFinished;
             StartCoroutine(CalculateAccuracyAndFireEvents());

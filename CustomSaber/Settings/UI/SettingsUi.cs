@@ -26,7 +26,7 @@ namespace CustomSaber.Settings.UI
                 sabersFlowCoordinator = BeatSaberUI.CreateFlowCoordinator<SabersFlowCoordinator>();
             }
 
-            BeatSaberUI.MainFlowCoordinator.PresentFlowCoordinator(sabersFlowCoordinator, null, false, false);
+            BeatSaberUI.MainFlowCoordinator.PresentFlowCoordinator(sabersFlowCoordinator);
         }
 
         private static void SabersMenuButtonPressed() => ShowSaberFlow();

@@ -5,7 +5,6 @@ using IPA.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Xft;
 #endif
 using UnityEngine;
 
@@ -33,7 +32,7 @@ namespace CustomSaber
 
 #if PLUGIN
         private CustomWeaponTrail trail;
-        private XWeaponTrailRenderer oldTrailRendererPrefab;
+        private SaberTrailRenderer oldTrailRendererPrefab;
 
         public void Init(Saber saber, ColorManager colorManager)
         {
@@ -51,21 +50,21 @@ namespace CustomSaber
                 Destroy(this);
             }
 
-            IEnumerable<XWeaponTrail> trails = Resources.FindObjectsOfTypeAll<XWeaponTrail>();
-            foreach (XWeaponTrail trail in trails)
+            IEnumerable<SaberTrailRenderer> trails = Resources.FindObjectsOfTypeAll<SaberTrailRenderer>();
+            foreach (SaberTrailRenderer trail in trails)
             {
                 ReflectionUtil.SetField(trail, "_trailWidth", 0f);
             }
 
-            XWeaponTrail oldtrail = Resources.FindObjectsOfTypeAll<GameCoreSceneSetup>().FirstOrDefault()
-                ?.GetField<BasicSaberModelController, GameCoreSceneSetup>("_basicSaberModelControllerPrefab")
-                ?.GetField<XWeaponTrail, BasicSaberModelController>("_saberWeaponTrail");
+            SaberTrail oldtrail = Resources.FindObjectsOfTypeAll<SaberModelContainer>().FirstOrDefault()
+                ?.GetField<SaberModelController, SaberModelContainer>("_saberModelControllerPrefab")
+                ?.GetField<SaberTrail, SaberModelController>("_saberTrail");
 
             if (oldtrail)
             {
                 try
                 {
-                    oldTrailRendererPrefab = ReflectionUtil.GetField<XWeaponTrailRenderer, XWeaponTrail>(oldtrail, "_trailRendererPrefab");
+                    oldTrailRendererPrefab = ReflectionUtil.GetField<SaberTrailRenderer, SaberTrail>(oldtrail, "_trailRendererPrefab");
                 }
                 catch (Exception ex)
                 {

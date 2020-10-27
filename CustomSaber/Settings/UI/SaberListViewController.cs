@@ -79,7 +79,9 @@ namespace CustomSaber.Settings.UI
             customListTableData.data.Clear();
             foreach (var saber in SaberAssetLoader.CustomSabers)
             {
-                var customCellInfo = new CustomListTableData.CustomCellInfo(saber.Descriptor.SaberName, saber.Descriptor.AuthorName, saber.Descriptor.CoverImage?.texture);
+                var texture = saber.Descriptor.CoverImage?.texture;
+                var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
+                var customCellInfo = new CustomListTableData.CustomCellInfo(saber.Descriptor.SaberName, saber.Descriptor.AuthorName, sprite);
                 customListTableData.data.Add(customCellInfo);
             }
 
@@ -91,9 +93,9 @@ namespace CustomSaber.Settings.UI
                 customListTableData.tableView.ScrollToCellWithIdx(selectedSaber, TableViewScroller.ScrollPositionType.Beginning, true);
         }
 
-        protected override void DidActivate(bool firstActivation, ActivationType type)
+        protected override void DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
         {
-            base.DidActivate(firstActivation, type);
+            base.DidActivate(firstActivation, addedToHierarchy, screenSystemEnabling);
 
             Instance = this;
 
@@ -107,9 +109,9 @@ namespace CustomSaber.Settings.UI
             Select(customListTableData.tableView, SaberAssetLoader.SelectedSaber);
         }
 
-        protected override void DidDeactivate(DeactivationType deactivationType)
+        protected override void DidDeactivate(bool removedFromHierarchy, bool screenSystemDisabling)
         {
-            base.DidDeactivate(deactivationType);
+            base.DidDeactivate(removedFromHierarchy, screen);
             ClearPreview();
         }
 
@@ -192,16 +194,18 @@ namespace CustomSaber.Settings.UI
                             defaultTrail.SetActive(true);
                             defaultTrail.transform.localPosition = Vector3.zero;
                             defaultTrail.transform.localRotation = Quaternion.identity;
-                            defaultTrail.transform.Find("BasicSaber").gameObject.SetActive(false);
+                            defaultTrail.transform.Find("BasicSaber")?.gameObject.SetActive(false);
                         }
                         else
                         {
                             foreach (var trail in trails)
                             {
-                                trail.Length = (Configuration.OverrideTrailLength) ? (int) (trail.Length * Configuration.TrailLength) : trail.Length;
+                                trail.Length = (Configuration.OverrideTrailLength) ? (int)(trail.Length * Configuration.TrailLength) : trail.Length;
                                 if (trail.Length < 2 || !trail.PointStart || !trail.PointEnd) continue;
-                                leftSaber.AddComponent<CustomWeaponTrail>().Init(ReflectionUtil.GetField<XWeaponTrailRenderer, Xft.XWeaponTrail>(DefaultSaberGrabber.trail, "_trailRendererPrefab"),
-                                    colorManager, trail.PointStart, trail.PointEnd, trail.TrailMaterial, trail.TrailColor, trail.Length, trail.Granularity, trail.MultiplierColor, trail.colorType);
+                                {
+                                    leftSaber.AddComponent<CustomWeaponTrail>().Init(ReflectionUtil.GetField<SaberTrailRenderer, SaberTrail>(DefaultSaberGrabber.trail, "_trailRendererPrefab"),
+                                        colorManager, trail.PointStart, trail.PointEnd, trail.TrailMaterial, trail.TrailColor, trail.Length, trail.Granularity, trail.MultiplierColor, trail.colorType);
+                                }
                             }
                         }
 
@@ -228,7 +232,7 @@ namespace CustomSaber.Settings.UI
                             defaultTrail.SetActive(true);
                             defaultTrail.transform.localPosition = Vector3.zero;
                             defaultTrail.transform.localRotation = Quaternion.identity;
-                            defaultTrail.transform.Find("BasicSaber").gameObject.SetActive(false);
+                            defaultTrail.transform.Find("BasicSaber")?.gameObject.SetActive(false);
                         }
                         else
                         {
@@ -236,7 +240,7 @@ namespace CustomSaber.Settings.UI
                             {
                                 trail.Length = (Configuration.OverrideTrailLength) ? (int)(trail.Length * Configuration.TrailLength) : trail.Length;
                                 if (trail.Length < 2 || !trail.PointStart || !trail.PointEnd) continue;
-                                rightSaber.AddComponent<CustomWeaponTrail>().Init(ReflectionUtil.GetField<XWeaponTrailRenderer, Xft.XWeaponTrail>(DefaultSaberGrabber.trail, "_trailRendererPrefab"),
+                                rightSaber.AddComponent<CustomWeaponTrail>().Init(ReflectionUtil.GetField<SaberTrailRenderer, SaberTrail>(DefaultSaberGrabber.trail, "_trailRendererPrefab"),
                                     colorManager, trail.PointStart, trail.PointEnd, trail.TrailMaterial, trail.TrailColor, trail.Length, trail.Granularity, trail.MultiplierColor, trail.colorType);
                             }
                         }

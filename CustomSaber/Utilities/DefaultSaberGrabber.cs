@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using IPA.Utilities;
+using Zenject;
 
 namespace CustomSaber.Utilities
 {
@@ -15,10 +16,9 @@ namespace CustomSaber.Utilities
     {
         public static bool isCompleted { get; private set; } = false;
 
-
         public static GameObject defaultLeftSaber = null;
         public static GameObject defaultRightSaber = null;
-        public static Xft.XWeaponTrail trail = null;
+        public static SaberTrail trail = null;
 
         private void Awake()
         {
@@ -32,20 +32,27 @@ namespace CustomSaber.Utilities
         private IEnumerator PreloadDefaultSabers()
         {
             bool isSceneLoaded = false;
-            string sceneName = "GameCore";
+            string sceneName;
 
             try
             {
+                sceneName = "StandardGameplay";
                 Logger.log.Debug($"Loading {sceneName} scene");
-                var loadScene = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                var loadScene = SceneManager.LoadSceneAsync("StandardGameplay", LoadSceneMode.Additive);
+                while (!loadScene.isDone) yield return null;
 
+                sceneName = "GameCore";
+                Logger.log.Debug($"Loading {sceneName} scene");
+                loadScene = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
                 while (!loadScene.isDone) yield return null;
 
                 isSceneLoaded = true;
                 Logger.log.Debug("Loaded!");
 
-                BasicSaberModelController saber = Resources.FindObjectsOfTypeAll<BasicSaberModelController>().FirstOrDefault();
-                trail = saber.GetComponent<Xft.XWeaponTrail>();
+                yield return new WaitForSecondsRealtime(0.1f);
+
+                SaberModelController saber = Resources.FindObjectsOfTypeAll<SaberModelController>().FirstOrDefault();                
+                trail = saber.GetComponent<SaberTrail>();
 
                 Logger.log.Debug("Got sabers!");
 
@@ -53,7 +60,7 @@ namespace CustomSaber.Utilities
 
                 // Left Saber
                 defaultLeftSaber = Instantiate(saber).gameObject;
-                DestroyImmediate(defaultLeftSaber.GetComponent<BasicSaberModelController>());
+                DestroyImmediate(defaultLeftSaber.GetComponent<SaberModelController>());
                 DestroyImmediate(defaultLeftSaber.GetComponentInChildren<ConditionalMaterialSwitcher>());
                 foreach (var c in defaultLeftSaber.GetComponentsInChildren<SetSaberGlowColor>())
                     DestroyImmediate(c);
@@ -64,10 +71,11 @@ namespace CustomSaber.Utilities
                 defaultLeftSaber.transform.localPosition = Vector3.zero;
                 defaultLeftSaber.transform.localRotation = Quaternion.identity;
                 defaultLeftSaber.AddComponent<DummySaber>();
+                //defaultLeftSaber.name = "defaultleft";
 
                 // Right Saber
                 defaultRightSaber = Instantiate(saber).gameObject;
-                DestroyImmediate(defaultRightSaber.GetComponent<BasicSaberModelController>());
+                DestroyImmediate(defaultRightSaber.GetComponent<SaberModelController>());
                 DestroyImmediate(defaultRightSaber.GetComponentInChildren<ConditionalMaterialSwitcher>());
                 foreach (var c in defaultRightSaber.GetComponentsInChildren<SetSaberGlowColor>())
                     DestroyImmediate(c);
@@ -78,6 +86,7 @@ namespace CustomSaber.Utilities
                 defaultRightSaber.transform.localPosition = Vector3.zero;
                 defaultRightSaber.transform.localRotation = Quaternion.identity;
                 defaultRightSaber.AddComponent<DummySaber>();
+                //defaultRightSaber.name = "defaultright";
 
                 Logger.log.Debug("Finished! Got default sabers! Setting active state");
 
@@ -85,7 +94,6 @@ namespace CustomSaber.Utilities
                 {
                     Logger.log.Debug("Found default left saber");
                     defaultLeftSaber.SetActive(false);
-
                 }
 
                 if (defaultRightSaber)
@@ -106,6 +114,11 @@ namespace CustomSaber.Utilities
             {
                 if (isSceneLoaded)
                 {
+                    sceneName = "StandardGameplay";
+                    Logger.log.Debug($"Unloading {sceneName}");
+                    SceneManager.UnloadSceneAsync(sceneName);
+
+                    sceneName = "GameCore";
                     Logger.log.Debug($"Unloading {sceneName}");
                     SceneManager.UnloadSceneAsync(sceneName);
                 }

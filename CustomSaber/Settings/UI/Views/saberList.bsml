@@ -1,5 +1,5 @@
 ﻿<bg xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xsi:schemaLocation='https://monkeymanboy.github.io/BSML-Docs/ https://raw.githubusercontent.com/monkeymanboy/BSML-Docs/gh-pages/BSMLSchema.xsd'>
-  <vertical pad-bottom='12' pad-top='2' spacing='1'>
+  <vertical pad-bottom='12' pad-top='2' spacing='1' vertical-fit="PreferredSize" >
     <page-button event-click='saberList#PageUp' direction='Up' />
     <list id='saberList' expand-cell='true' select-cell='saberSelect' />
     <page-button event-click='saberList#PageDown' direction='Down' />
@@ -13,13 +13,13 @@
     <vertical vertical-fit="PreferredSize" horizontal-fit="PreferredSize" pref-width="70" pad-top="10" >
       <text id="delete-saber-confirmation-text" text="Are you sure?" font-align="Center" font-size="6"/>
     </vertical>
-    <bottom-button-panel>
+    <horizontal horizontal-fit='PreferredSize' pad-top='50'>
       <button click-event="confirm" text="Cancel"/>
       <button click-event="confirm" on-click="deleteSaber" text="Confirm" />
-    </bottom-button-panel>
+    </horizontal>
   </modal>
-  <bottom-button-panel child-control-height='false'>
+  <horizontal horizontal-fit='PreferredSize' pad-top='75'>
     <button text='Reload all sabers' on-click='reloadSabers' />
     <button text='Delete Saber' click-event='delete-confirmation' on-click='update-confirmation' />
-  </bottom-button-panel>
+  </horizontal>
 </bg>

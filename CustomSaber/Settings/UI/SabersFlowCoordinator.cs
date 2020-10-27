@@ -29,30 +29,30 @@ namespace CustomSaber.Settings.UI
             }
         }
 
-        protected override void DidActivate(bool firstActivation, ActivationType activationType)
+        protected override void DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
         {
             try
             {
                 if (firstActivation)
                 {
-                    title = "Custom Sabers";
+                    SetTitle("Custom Sabers");
                     showBackButton = true;
                     ProvideInitialViewControllers(saberListView, saberSettingsView, saberPreviewView);
+
+                    var grabber = new UnityEngine.GameObject("Default Saber Grabber").AddComponent<CustomSaber.Utilities.DefaultSaberGrabber>();
+                    DontDestroyOnLoad(grabber);
                 }
             }
             catch (Exception ex)
             {
                 Logger.log.Error(ex);
             }
-
-            var grabber = new UnityEngine.GameObject("Default Saber Grabber").AddComponent<CustomSaber.Utilities.DefaultSaberGrabber>();
-            DontDestroyOnLoad(grabber);
         }
 
         protected override void BackButtonWasPressed(ViewController topViewController)
         {
             // Dismiss ourselves
-            BeatSaberUI.MainFlowCoordinator.DismissFlowCoordinator(this, null, false);
+            BeatSaberUI.MainFlowCoordinator.DismissFlowCoordinator(this);
         }
     }
 }
