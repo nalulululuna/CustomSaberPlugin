@@ -117,15 +117,17 @@ namespace CustomSaber.Utilities
 
         public override void ResetTrailData()
         {
-            _trailElementCollection.InitSnapshots(_pointStart.position, _pointEnd.position, TimeHelper.time);
+            if (_trailElementCollection != null)
+            {
+                _lastTrailElementTime = TimeHelper.time;
+                _trailElementCollection.InitSnapshots(_pointStart.position, _pointEnd.position, _lastTrailElementTime);
+            }
         }
 
         public override void Init()
         {
             // nop
         }
-
-        private float _prevTrailTime;
 
         public override void LateUpdate()
         {
@@ -145,7 +147,8 @@ namespace CustomSaber.Utilities
 
                     _sampleStep = 1f / (float)_samplingFrequency;
                     int capacity = Mathf.CeilToInt((float)_samplingFrequency * _trailDuration);
-		            _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, TimeHelper.time);
+                    _lastTrailElementTime = TimeHelper.time;
+                    _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, _lastTrailElementTime);
 		            float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
 		            _whiteSectionMaxDuration = Mathf.Min(_whiteSectionMaxDuration, _trailDuration);
 		            _lastZScale = transform.lossyScale.z;
@@ -169,16 +172,12 @@ namespace CustomSaber.Utilities
                 }
             }
 
-            if (_prevTrailTime == 0)
-            {
-                _prevTrailTime = TimeHelper.time;
-            }
-            int num = Mathf.RoundToInt((TimeHelper.time - _prevTrailTime) / _sampleStep);
+            int num = Mathf.RoundToInt((TimeHelper.time - _lastTrailElementTime) / _sampleStep);
             for (int i = 0; i < num; i++)
             {
-                _prevTrailTime = TimeHelper.time;
+                _lastTrailElementTime = TimeHelper.time;
                 _trailElementCollection.MoveTailToHead();
-                _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, _prevTrailTime);
+                _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, _lastTrailElementTime);
             }
             _trailElementCollection.UpdateDistances();
             _trailRenderer.UpdateMesh(_trailElementCollection, color);

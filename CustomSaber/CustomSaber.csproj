@@ -133,6 +133,7 @@
     <Compile Include="Dynamic Bones\DynamicBoneCollider.cs" />
     <Compile Include="Dynamic Bones\DynamicBoneColliderBase.cs" />
     <Compile Include="Dynamic Bones\DynamicBonePlaneCollider.cs" />
+    <Compile Include="HarmonyPatches\TrailElementCollection.cs" />
     <Compile Include="HarmonyPatches\SaberTrail.cs" />
     <Compile Include="Settings\UI\SaberSettingsViewController.cs" />
     <Compile Include="Utilities\CustomWeaponTrail.cs" />
