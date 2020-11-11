@@ -63,6 +63,13 @@ namespace CustomSaber.Utilities
         {
             OnDestroy();
 
+            if (sabers != null)
+            {
+                pauseController = FindObjectsOfType<PauseController>().FirstOrDefault();
+                pauseController.didResumeEvent -= OnPauseResume;
+                pauseController.didResumeEvent += OnPauseResume;
+            }
+
             if (sabers && Configuration.CustomEventsEnabled)
             {
                 AddEvents();
@@ -157,11 +164,6 @@ namespace CustomSaber.Utilities
                 {
                     Logger.log.Warn($"Failed to locate a suitable '{nameof(PlayerHeadAndObstacleInteraction)}'.");
                 }
-
-                pauseController = FindObjectsOfType<PauseController>().FirstOrDefault();
-                {
-                    pauseController.didResumeEvent += OnPauseResume;
-                }
             }
             catch (Exception ex)
             {
@@ -202,16 +204,22 @@ namespace CustomSaber.Utilities
             }
         }
 
-        public void OnPauseResume()
+        private void OnPauseResume()
         {
             foreach (var saberTrailRenderer in Resources.FindObjectsOfTypeAll<SaberTrailRenderer>())
             {
+                Logger.log.Debug("saberTrailRenderer");
                 saberTrailRenderer.enabled = true;
             }
         }
 
         private void OnDestroy()
         {
+            if (pauseController != null)
+            {
+                pauseController.didResumeEvent += OnPauseResume;
+            }
+
             if (beatmapObjectManager != null)
             {
                 beatmapObjectManager.noteWasCutEvent -= SliceCallBack;
@@ -306,27 +314,27 @@ namespace CustomSaber.Utilities
                     saber.transform.position = defaultSaber.transform.position;
                     saber.transform.rotation = defaultSaber.transform.rotation;
 
-                    if (Configuration.TrailType == TrailType.Custom)
+                    IEnumerable<CustomTrail> customTrails = saber.GetComponents<CustomTrail>();
+
+                    if (Configuration.TrailType == TrailType.Custom && customTrails.Count() > 0)
                     {
                         HideVanillaTrails();
 
-                        IEnumerable<CustomTrail> customTrails = saber.GetComponents<CustomTrail>();
-
-                        if (customTrails.Count() == 0 && Configuration.OverrideTrailLength)
+                        foreach (CustomTrail trail in customTrails)
+                        {
+                            trail.Init(defaultSaber, colorManager);
+                        }
+                    }
+                    else if (Configuration.TrailType != TrailType.None)
+                    {
+                        if (Configuration.OverrideTrailLength)
                         {
                             SetDefaultTrailLength(defaultSaber);
                         }
-                        else
+                        if (Configuration.DisableWhitestep)
                         {
-                            foreach (CustomTrail trail in customTrails)
-                            {
-                                trail.Init(defaultSaber, colorManager);
-                            }
+                            defaultSaber.GetComponentInChildren<SaberTrail>()?.SetField("_whiteSectionMaxDuration", 0f);
                         }
-                    }
-                    else if (Configuration.TrailType == TrailType.Vanilla && Configuration.OverrideTrailLength)
-                    {
-                        SetDefaultTrailLength(defaultSaber);
                     }
 
                     ApplyColorsToSaber(saber, colorManager.ColorForSaberType(defaultSaber.saberType));
@@ -338,7 +346,7 @@ namespace CustomSaber.Utilities
         void SetDefaultTrailLength(Saber saber)
         {
             var trail = saber.GetComponentInChildren<SaberTrail>();
-            int length = (int)(Configuration.TrailLength * 30);
+            float length = Configuration.TrailLength * 30;
             if (length < 2)
             {
                 HideVanillaTrails();
@@ -389,7 +397,6 @@ namespace CustomSaber.Utilities
         private IEnumerator WaitToCheckDefault()
         {
             yield return new WaitUntil(() => Resources.FindObjectsOfTypeAll<Saber>().Any());
-
 
             if (Configuration.TrailType == TrailType.None)
             {

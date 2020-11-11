@@ -38,7 +38,7 @@ namespace CustomSaber.Utilities
             {
                 sceneName = "StandardGameplay";
                 Logger.log.Debug($"Loading {sceneName} scene");
-                var loadScene = SceneManager.LoadSceneAsync("StandardGameplay", LoadSceneMode.Additive);
+                var loadScene = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
                 while (!loadScene.isDone) yield return null;
 
                 sceneName = "GameCore";
@@ -52,7 +52,6 @@ namespace CustomSaber.Utilities
                 yield return new WaitForSecondsRealtime(0.1f);
 
                 SaberModelController saber = Resources.FindObjectsOfTypeAll<SaberModelController>().FirstOrDefault();                
-                trail = saber.GetComponent<SaberTrail>();
 
                 Logger.log.Debug("Got sabers!");
 
@@ -71,7 +70,6 @@ namespace CustomSaber.Utilities
                 defaultLeftSaber.transform.localPosition = Vector3.zero;
                 defaultLeftSaber.transform.localRotation = Quaternion.identity;
                 defaultLeftSaber.AddComponent<DummySaber>();
-                //defaultLeftSaber.name = "defaultleft";
 
                 // Right Saber
                 defaultRightSaber = Instantiate(saber).gameObject;
@@ -86,7 +84,6 @@ namespace CustomSaber.Utilities
                 defaultRightSaber.transform.localPosition = Vector3.zero;
                 defaultRightSaber.transform.localRotation = Quaternion.identity;
                 defaultRightSaber.AddComponent<DummySaber>();
-                //defaultRightSaber.name = "defaultright";
 
                 Logger.log.Debug("Finished! Got default sabers! Setting active state");
 

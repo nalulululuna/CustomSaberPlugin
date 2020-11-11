@@ -58,7 +58,7 @@ namespace CustomSaber.Utilities
 
             _pointStart = PointStart;
             _pointEnd = PointEnd;
-            _trailDuration = Length / 75f;
+            _trailDuration = (float)Length / 75f;
             if (!Settings.Configuration.DisableWhitestep)
             {
                 _whiteSectionMaxDuration = 0.04f;
@@ -82,7 +82,7 @@ namespace CustomSaber.Utilities
         {
             base.OnEnable();
             StartCoroutine(replaceMaterialCoroutine());
-            if (Settings.Configuration.DisableWhitestep) ReflectionUtil.SetField<SaberTrail, float>(this, "_whiteSectionMaxDuration", 0);
+            if (Settings.Configuration.DisableWhitestep) ReflectionUtil.SetField<SaberTrail, float>(this, "_whiteSectionMaxDuration", 0f);
         }
 
         protected IEnumerator replaceMaterialCoroutine()
@@ -132,7 +132,7 @@ namespace CustomSaber.Utilities
         public override void LateUpdate()
         {
             // wait until the fps is stable
-            const int passThroughFrames = 20;
+            const int passThroughFrames = 4;
 
             if (_framesPassed <= passThroughFrames)
             {
@@ -142,6 +142,10 @@ namespace CustomSaber.Utilities
                     if (VRDeviceInfo.Instance.isPimax)
                     {
                         _samplingFrequency = _samplingFrequency / 2;
+                    }
+                    if (_samplingFrequency == 0)
+                    {
+                        _samplingFrequency = 60;
                     }
                     Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}");
 
@@ -160,6 +164,7 @@ namespace CustomSaber.Utilities
                 return;
             }
 
+            /*
             _framesToScaleCheck--;
             if (_framesToScaleCheck <= 0)
             {
@@ -171,6 +176,7 @@ namespace CustomSaber.Utilities
                     _trailRenderer.SetTrailWidth(trailWidth);
                 }
             }
+            */
 
             int num = Mathf.RoundToInt((TimeHelper.time - _lastTrailElementTime) / _sampleStep);
             for (int i = 0; i < num; i++)
