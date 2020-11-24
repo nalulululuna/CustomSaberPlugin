@@ -129,6 +129,9 @@ namespace CustomSaber.Utilities
             // nop
         }
 
+        Vector3 _lastPointStart;
+        Vector3 _lastPointEnd;
+
         public override void LateUpdate()
         {
             // wait until the fps is stable
@@ -147,24 +150,29 @@ namespace CustomSaber.Utilities
                     {
                         _samplingFrequency = 60;
                     }
-                    Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}");
+                    _samplingFrequency = _samplingFrequency + 1;// Mathf.RoundToInt((float)_samplingFrequency * 1.1f);
 
                     _sampleStep = 1f / (float)_samplingFrequency;
                     int capacity = Mathf.CeilToInt((float)_samplingFrequency * _trailDuration);
+                    Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}, capacity={capacity}");
                     _lastTrailElementTime = TimeHelper.time;
                     _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, _lastTrailElementTime);
 		            float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
 		            _whiteSectionMaxDuration = Mathf.Min(_whiteSectionMaxDuration, _trailDuration);
 		            _lastZScale = transform.lossyScale.z;
                     _trailRenderer.Init(trailWidth, _trailDuration, _granularity, _whiteSectionMaxDuration);
-		            _inited = true;
+
+                    _lastPointStart = _pointStart.position;
+                    _lastPointEnd = _pointEnd.position;
+
+                    _inited = true;
                 }
                 _framesPassed++;
 
                 return;
             }
 
-            /*
+            /* trailWidth update
             _framesToScaleCheck--;
             if (_framesToScaleCheck <= 0)
             {
@@ -179,12 +187,37 @@ namespace CustomSaber.Utilities
             */
 
             int num = Mathf.RoundToInt((TimeHelper.time - _lastTrailElementTime) / _sampleStep);
+
+            // frame drop correction ----
+            for (int i = 1; i < num; i++)
+            {
+                float t = (float)i / (float)num;
+                _lastTrailElementTime = (TimeHelper.time - _lastTrailElementTime) * t + _lastTrailElementTime;
+                _lastPointStart = Vector3.Slerp(_lastPointStart, _pointStart.position, t);
+                _lastPointEnd = Vector3.Slerp(_lastPointEnd, _pointEnd.position, t);
+
+                _trailElementCollection.MoveTailToHead();
+                _trailElementCollection.head.SetData(_lastPointStart, _lastPointEnd, _lastTrailElementTime);
+            }
+
+            _lastTrailElementTime = TimeHelper.time;
+            _lastPointStart = _pointStart.position;
+            _lastPointEnd = _pointEnd.position;
+            _trailElementCollection.MoveTailToHead();
+            _trailElementCollection.head.SetData(_lastPointStart, _lastPointEnd, _lastTrailElementTime);
+            // ----
+
+            /*
+            // no frame drop correction ----
             for (int i = 0; i < num; i++)
             {
                 _lastTrailElementTime = TimeHelper.time;
                 _trailElementCollection.MoveTailToHead();
                 _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, _lastTrailElementTime);
             }
+            // ----
+            */
+
             _trailElementCollection.UpdateDistances();
             _trailRenderer.UpdateMesh(_trailElementCollection, color);
         }

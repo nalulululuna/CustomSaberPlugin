@@ -208,7 +208,6 @@ namespace CustomSaber.Utilities
         {
             foreach (var saberTrailRenderer in Resources.FindObjectsOfTypeAll<SaberTrailRenderer>())
             {
-                Logger.log.Debug("saberTrailRenderer");
                 saberTrailRenderer.enabled = true;
             }
         }
