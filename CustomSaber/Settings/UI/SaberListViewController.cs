@@ -179,6 +179,11 @@ namespace CustomSaber.Settings.UI
 
             try
             {
+                foreach (var collider in sabers.GetComponentsInChildren<Collider>())
+                {
+                    collider.enabled = false;
+                }
+
                 if (_trailRendererPrefab == null)
                 {
                     foreach (var trail in Resources.FindObjectsOfTypeAll<SaberTrail>())
