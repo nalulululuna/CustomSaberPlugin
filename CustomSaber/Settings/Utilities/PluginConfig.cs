@@ -13,5 +13,6 @@
         public float trailLength = 1f;
         public float saberWidthAdjust = 1f;
         public bool disableWhitestep = false;
+        public float samplingMultiplier = 4f;
     }
 }

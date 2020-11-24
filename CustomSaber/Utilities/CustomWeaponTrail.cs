@@ -142,24 +142,29 @@ namespace CustomSaber.Utilities
                 if (_framesPassed == passThroughFrames)
                 {
                     _samplingFrequency = Mathf.RoundToInt(VRDeviceInfo.Instance.refreshRate);
+                    /* no need after recent steamvr update for pimax?
                     if (VRDeviceInfo.Instance.isPimax)
                     {
                         _samplingFrequency = _samplingFrequency / 2;
+                    }
+                    else
+                    */
+                    {
+                        _samplingFrequency = Mathf.RoundToInt((float)_samplingFrequency * Settings.Utilities.PluginConfig.Instance.samplingMultiplier);
                     }
                     if (_samplingFrequency == 0)
                     {
                         _samplingFrequency = 60;
                     }
-                    _samplingFrequency = _samplingFrequency + 1;// Mathf.RoundToInt((float)_samplingFrequency * 1.1f);
 
                     _sampleStep = 1f / (float)_samplingFrequency;
                     int capacity = Mathf.CeilToInt((float)_samplingFrequency * _trailDuration);
                     Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}, capacity={capacity}");
                     _lastTrailElementTime = TimeHelper.time;
                     _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, _lastTrailElementTime);
-		            float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
-		            _whiteSectionMaxDuration = Mathf.Min(_whiteSectionMaxDuration, _trailDuration);
-		            _lastZScale = transform.lossyScale.z;
+                    float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
+                    _whiteSectionMaxDuration = Mathf.Min(_whiteSectionMaxDuration, _trailDuration);
+                    _lastZScale = transform.lossyScale.z;
                     _trailRenderer.Init(trailWidth, _trailDuration, _granularity, _whiteSectionMaxDuration);
 
                     _lastPointStart = _pointStart.position;
@@ -172,54 +177,31 @@ namespace CustomSaber.Utilities
                 return;
             }
 
-            /* trailWidth update
-            _framesToScaleCheck--;
-            if (_framesToScaleCheck <= 0)
+            if (TimeHelper.time <= _lastTrailElementTime)
             {
-                _framesToScaleCheck = 10;
-                if (!Mathf.Approximately(base.transform.lossyScale.z, _lastZScale))
-                {
-                    _lastZScale = base.transform.lossyScale.z;
-                    float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
-                    _trailRenderer.SetTrailWidth(trailWidth);
-                }
+                return;
             }
-            */
 
-            int num = Mathf.RoundToInt((TimeHelper.time - _lastTrailElementTime) / _sampleStep);
+            int num = Mathf.FloorToInt((TimeHelper.time - _lastTrailElementTime) / _sampleStep);
+            float time = TimeHelper.time;
+            float lastTime = _lastTrailElementTime;
 
-            // frame drop correction ----
-            for (int i = 1; i < num; i++)
+            for (int i = 1; i <= num; i++)
             {
-                float t = (float)i / (float)num;
-                _lastTrailElementTime = (TimeHelper.time - _lastTrailElementTime) * t + _lastTrailElementTime;
-                _lastPointStart = Vector3.Slerp(_lastPointStart, _pointStart.position, t);
-                _lastPointEnd = Vector3.Slerp(_lastPointEnd, _pointEnd.position, t);
+                _lastTrailElementTime += _sampleStep;
+                float t = (_lastTrailElementTime - lastTime) / (time - lastTime);
+                _lastPointStart = Vector3.LerpUnclamped(_lastPointStart, _pointStart.position, t);
+                _lastPointEnd = Vector3.LerpUnclamped(_lastPointEnd, _pointEnd.position, t);
 
                 _trailElementCollection.MoveTailToHead();
                 _trailElementCollection.head.SetData(_lastPointStart, _lastPointEnd, _lastTrailElementTime);
             }
 
-            _lastTrailElementTime = TimeHelper.time;
-            _lastPointStart = _pointStart.position;
-            _lastPointEnd = _pointEnd.position;
-            _trailElementCollection.MoveTailToHead();
-            _trailElementCollection.head.SetData(_lastPointStart, _lastPointEnd, _lastTrailElementTime);
-            // ----
-
-            /*
-            // no frame drop correction ----
-            for (int i = 0; i < num; i++)
+            if (num > 0)
             {
-                _lastTrailElementTime = TimeHelper.time;
-                _trailElementCollection.MoveTailToHead();
-                _trailElementCollection.head.SetData(_pointStart.position, _pointEnd.position, _lastTrailElementTime);
+                _trailElementCollection.UpdateDistances();
+                _trailRenderer.UpdateMesh(_trailElementCollection, color);
             }
-            // ----
-            */
-
-            _trailElementCollection.UpdateDistances();
-            _trailRenderer.UpdateMesh(_trailElementCollection, color);
         }
     }
 
