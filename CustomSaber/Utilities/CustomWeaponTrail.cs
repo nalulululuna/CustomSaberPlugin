@@ -134,6 +134,11 @@ namespace CustomSaber.Utilities
 
         public override void LateUpdate()
         {
+            if (_pointStart == null || _pointEnd == null)
+            {
+                return;
+            }
+
             // wait until the fps is stable
             const int passThroughFrames = 4;
 
@@ -159,7 +164,7 @@ namespace CustomSaber.Utilities
 
                     _sampleStep = 1f / (float)_samplingFrequency;
                     int capacity = Mathf.CeilToInt((float)_samplingFrequency * _trailDuration);
-                    Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}, capacity={capacity}");
+                    Logger.log.Debug($"trail samplingFrequency={_samplingFrequency}, duration={_trailDuration}, capacity={capacity}");
                     _lastTrailElementTime = TimeHelper.time;
                     _trailElementCollection = new TrailElementCollection(capacity, _pointStart.position, _pointEnd.position, _lastTrailElementTime);
                     float trailWidth = (_pointEnd.position - _pointStart.position).magnitude;
@@ -226,7 +231,7 @@ namespace CustomSaber.Utilities
             Logger.log?.Info($"XRSettings.loadedDeviceName: {XRSettings.loadedDeviceName}");
 
             refreshRate = XRDevice.refreshRate;
-            Logger.log?.Info($"refreshRate: {refreshRate}");
+            Logger.log?.Info($"XRDevice.refreshRate: {refreshRate}");
 
             isPimax = XRDevice.model.ToLower().Contains("pimax");
         }

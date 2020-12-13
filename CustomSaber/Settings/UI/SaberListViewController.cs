@@ -172,7 +172,7 @@ namespace CustomSaber.Settings.UI
         {
             if (Environment.CommandLine.Contains("fpfc")) return;
             var customSaber = SaberAssetLoader.CustomSabers[SaberAssetLoader.SelectedSaber];
-            if (customSaber == null || !customSaber.Sabers) return;
+            if (customSaber == null || !customSaber.Sabers || preview == null) return;
             var controllers = Resources.FindObjectsOfTypeAll<VRController>();
             var sabers = CreatePreviewSaber(customSaber.Sabers, preview.transform, sabersPos);
             var colorManager = Resources.FindObjectsOfTypeAll<ColorManager>().First();

@@ -389,6 +389,8 @@ namespace CustomSaber.Utilities
                             }
                         }
                     }
+
+                    renderer.gameObject.layer = 12;
                 }
             }
         }

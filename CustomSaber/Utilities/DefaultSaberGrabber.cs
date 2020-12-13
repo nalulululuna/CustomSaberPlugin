@@ -18,7 +18,6 @@ namespace CustomSaber.Utilities
 
         public static GameObject defaultLeftSaber = null;
         public static GameObject defaultRightSaber = null;
-        public static SaberTrail trail = null;
 
         private void Awake()
         {
@@ -26,6 +25,23 @@ namespace CustomSaber.Utilities
             if (!isCompleted)
             {
                 StartCoroutine(PreloadDefaultSabers());
+            }
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+        }
+
+        private void OnActiveSceneChanged(Scene current, Scene next)
+        {
+            if (next.name == "PCInit")
+            {
+                if (defaultLeftSaber != null)
+                {
+                    Destroy(defaultLeftSaber);
+                }
+                if (defaultRightSaber != null)
+                {
+                    Destroy(defaultRightSaber);
+                }
+                isCompleted = false;
             }
         }
 
