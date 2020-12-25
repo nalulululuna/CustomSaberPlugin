@@ -356,8 +356,8 @@ namespace CustomSaber.Utilities
 
         void ApplyScaleToSabers()
         {
-            leftSaber.transform.localScale = new Vector3(Configuration.SaberWidthAdjust, Configuration.SaberWidthAdjust, 1);
-            rightSaber.transform.localScale = new Vector3(Configuration.SaberWidthAdjust, Configuration.SaberWidthAdjust, 1);
+            leftSaber.transform.localScale = new Vector3(Configuration.SaberWidthAdjust, Configuration.SaberWidthAdjust, Configuration.SaberLengthAdjust);
+            rightSaber.transform.localScale = new Vector3(Configuration.SaberWidthAdjust, Configuration.SaberWidthAdjust, Configuration.SaberLengthAdjust);
         }
 
         public static void ApplyColorsToSaber(GameObject saber, Color color)
