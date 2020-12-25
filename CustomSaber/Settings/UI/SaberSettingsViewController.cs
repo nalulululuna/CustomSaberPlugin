@@ -84,6 +84,13 @@ namespace CustomSaber.Settings.UI
             set => Configuration.SaberWidthAdjust = value;
         }
 
+        [UIValue("saber-length-adjust")]
+        public float SaberLengthAdjust
+        {
+            get => Configuration.SaberLengthAdjust;
+            set => Configuration.SaberLengthAdjust = value;
+        }
+
         [UIAction("percent-formatter")]
         public string OnFormatPercent(float obj) => $"{obj * 100}%";
 
